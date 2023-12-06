@@ -7,7 +7,6 @@ import (
 
 	"github.com/pingcap/ng-monitoring/config"
 	"github.com/pingcap/ng-monitoring/utils/testutil"
-
 	"github.com/stretchr/testify/require"
 	"go.uber.org/goleak"
 )
@@ -15,7 +14,6 @@ import (
 func TestMain(m *testing.M) {
 	opts := []goleak.Option{
 		goleak.IgnoreTopFunction("github.com/golang/glog.(*loggingT).flushDaemon"),
-		goleak.IgnoreTopFunction("github.com/golang/glog.(*fileSink).flushDaemon"),
 	}
 
 	goleak.VerifyTestMain(m, opts...)

@@ -38,10 +38,8 @@ func Subscribe() Subscriber {
 }
 
 func Stop() {
-	if syncer != nil {
-		syncer.Stop()
+	if syncer == nil {
+		return
 	}
-	if discover != nil {
-		_ = discover.Close()
-	}
+	syncer.Stop()
 }

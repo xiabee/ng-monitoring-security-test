@@ -2,20 +2,14 @@ package topology
 
 import (
 	"context"
-	"encoding/json"
-	"strconv"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
 
+	"github.com/pingcap/log"
 	"github.com/pingcap/ng-monitoring/component/domain"
 	"github.com/pingcap/ng-monitoring/utils"
-	clientv3 "go.etcd.io/etcd/client/v3"
-
-	"github.com/pingcap/log"
 	"github.com/pingcap/tidb-dashboard/util/topo"
-	"github.com/pingcap/tidb-dashboard/util/topo/pdtopo"
 	"go.uber.org/zap"
 )
 
@@ -24,7 +18,6 @@ const (
 	ComponentTiKV    = "tikv"
 	ComponentTiFlash = "tiflash"
 	ComponentPD      = "pd"
-	ComponentTiCDC   = "ticdc"
 )
 
 var (
@@ -131,7 +124,6 @@ func (d *TopologyDiscoverer) fetchAllScrapeTargets(ctx context.Context) ([]Compo
 		d.getTiDBComponents,
 		d.getPDComponents,
 		d.getStoreComponents,
-		d.getTiCDCComponents,
 	}
 	components := make([]Component, 0, 8)
 	for _, fn := range fns {
@@ -149,13 +141,13 @@ func (d *TopologyDiscoverer) getTiDBComponents(ctx context.Context) ([]Component
 	if err != nil {
 		return nil, err
 	}
-	instances, err := pdtopo.GetTiDBInstances(ctx, etcdCli)
+	instances, err := topo.GetTiDBInstances(ctx, etcdCli)
 	if err != nil {
 		return nil, err
 	}
 	components := make([]Component, 0, len(instances))
 	for _, instance := range instances {
-		if instance.Status != topo.CompStatusUp {
+		if instance.Status != topo.ComponentStatusUp {
 			continue
 		}
 		components = append(components, Component{
@@ -173,13 +165,13 @@ func (d *TopologyDiscoverer) getPDComponents(ctx context.Context) ([]Component, 
 	if err != nil {
 		return nil, err
 	}
-	instances, err := pdtopo.GetPDInstances(ctx, pdCli)
+	instances, err := topo.GetPDInstances(pdCli)
 	if err != nil {
 		return nil, err
 	}
 	components := make([]Component, 0, len(instances))
 	for _, instance := range instances {
-		if instance.Status != topo.CompStatusUp {
+		if instance.Status != topo.ComponentStatusUp {
 			continue
 		}
 		components = append(components, Component{
@@ -197,87 +189,25 @@ func (d *TopologyDiscoverer) getStoreComponents(ctx context.Context) ([]Componen
 	if err != nil {
 		return nil, err
 	}
-	tikvInstances, tiflashInstances, err := pdtopo.GetStoreInstances(ctx, pdCli)
+	tikvInstances, tiflashInstances, err := topo.GetStoreInstances(pdCli)
 	if err != nil {
 		return nil, err
 	}
 	components := make([]Component, 0, len(tikvInstances)+len(tiflashInstances))
-	for _, instance := range tikvInstances {
-		if instance.Status != topo.CompStatusUp {
-			continue
+	getComponents := func(instances []topo.StoreInfo, name string) {
+		for _, instance := range instances {
+			if instance.Status != topo.ComponentStatusUp {
+				continue
+			}
+			components = append(components, Component{
+				Name:       name,
+				IP:         instance.IP,
+				Port:       instance.Port,
+				StatusPort: instance.StatusPort,
+			})
 		}
-		components = append(components, Component{
-			Name:       ComponentTiKV,
-			IP:         instance.IP,
-			Port:       instance.Port,
-			StatusPort: instance.StatusPort,
-		})
 	}
-	for _, instance := range tiflashInstances {
-		if instance.Status != topo.CompStatusUp {
-			continue
-		}
-		components = append(components, Component{
-			Name:       ComponentTiFlash,
-			IP:         instance.IP,
-			Port:       instance.Port,
-			StatusPort: instance.StatusPort,
-		})
-	}
-	return components, nil
-}
-
-func (d *TopologyDiscoverer) getTiCDCComponents(ctx context.Context) ([]Component, error) {
-	etcdCli, err := d.do.GetEtcdClient()
-	if err != nil {
-		return nil, err
-	}
-	return getTiCDCComponents(ctx, etcdCli)
-}
-
-const ticdcTopologyKeyPrefix = "/tidb/cdc/default/__cdc_meta__/capture/"
-
-type ticdcNodeItem struct {
-	ID      string `json:"id"`
-	Address string `json:"address"`
-	Version string `json:"version"`
-}
-
-func getTiCDCComponents(ctx context.Context, etcdCli *clientv3.Client) ([]Component, error) {
-	resp, err := etcdCli.Get(ctx, ticdcTopologyKeyPrefix, clientv3.WithPrefix())
-	if err != nil {
-		return nil, err
-	}
-	components := make([]Component, 0, 3)
-	for _, kv := range resp.Kvs {
-		key := string(kv.Key)
-		if !strings.HasPrefix(key, ticdcTopologyKeyPrefix) {
-			continue
-		}
-		var item ticdcNodeItem
-		if err := json.Unmarshal(kv.Value, &item); err != nil {
-			log.Warn("invalid ticdc node item in etcd", zap.Error(err))
-			continue
-		}
-		arr := strings.Split(item.Address, ":")
-		if len(arr) != 2 {
-			log.Warn("invalid ticdc node address in etcd", zap.String("address", item.Address))
-			continue
-		}
-		ip := arr[0]
-		port, err := strconv.Atoi(arr[1])
-		if err != nil {
-			log.Warn("invalid ticdc node address in etcd",
-				zap.Error(err),
-				zap.String("address", item.Address))
-			continue
-		}
-		components = append(components, Component{
-			Name:       ComponentTiCDC,
-			IP:         ip,
-			Port:       uint(port),
-			StatusPort: uint(port),
-		})
-	}
+	getComponents(tikvInstances, ComponentTiKV)
+	getComponents(tiflashInstances, ComponentTiFlash)
 	return components, nil
 }

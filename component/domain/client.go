@@ -7,12 +7,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/pingcap/ng-monitoring/config"
-
 	"github.com/pingcap/log"
+	"github.com/pingcap/ng-monitoring/config"
 	"github.com/pingcap/tidb-dashboard/util/client/httpclient"
 	"github.com/pingcap/tidb-dashboard/util/client/pdclient"
-	clientv3 "go.etcd.io/etcd/client/v3"
+	"go.etcd.io/etcd/clientv3"
 	"go.uber.org/zap"
 )
 
@@ -148,16 +147,18 @@ func CreatePDClient(cfg *config.Config) (*pdclient.APIClient, error) {
 	var pdCli *pdclient.APIClient
 	var err error
 	for _, endpoint := range cfg.PD.Endpoints {
-		pdCli = pdclient.NewAPIClient(httpclient.Config{
+		pdCli, err = pdclient.NewAPIClient(httpclient.APIClientConfig{
 			// TODO: support all PD endpoints.
-			DefaultBaseURL: fmt.Sprintf("%v://%v", cfg.GetHTTPScheme(), endpoint),
-			DefaultCtx:     context.Background(),
-			TLSConfig:      cfg.Security.GetTLSConfig(),
+			Endpoint: fmt.Sprintf("%v://%v", cfg.GetHTTPScheme(), endpoint),
+			Context:  context.Background(),
+			TLS:      cfg.Security.GetTLSConfig(),
 		})
-		_, err = pdCli.GetHealth(context.Background())
 		if err == nil {
-			log.Info("create pd client success", zap.String("pd-address", endpoint))
-			return pdCli, nil
+			_, err = pdCli.GetHealth()
+			if err == nil {
+				log.Info("create pd client success", zap.String("pd-address", endpoint))
+				return pdCli, nil
+			}
 		}
 	}
 	if err != nil {

@@ -4,9 +4,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pingcap/ng-monitoring/component/topsql/store"
-
 	rsmetering "github.com/pingcap/kvproto/pkg/resource_usage_agent"
+	"github.com/pingcap/ng-monitoring/component/topsql/store"
 	"github.com/pingcap/tipb/go-tipb"
 )
 

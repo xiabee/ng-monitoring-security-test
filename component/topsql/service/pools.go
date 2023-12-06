@@ -3,9 +3,8 @@ package service
 import (
 	"sync"
 
-	"github.com/pingcap/ng-monitoring/component/topsql/query"
-
 	"github.com/pingcap/kvproto/pkg/resource_usage_agent"
+	"github.com/pingcap/ng-monitoring/component/topsql/query"
 	"github.com/pingcap/tipb/go-tipb"
 )
 

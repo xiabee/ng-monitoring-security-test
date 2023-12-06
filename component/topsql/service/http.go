@@ -6,10 +6,9 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/pingcap/ng-monitoring/component/topsql/query"
 	"github.com/pingcap/ng-monitoring/component/topsql/store"
-
-	"github.com/gin-gonic/gin"
 )
 
 var (

@@ -11,10 +11,9 @@ import (
 	"github.com/pingcap/ng-monitoring/config"
 	"github.com/pingcap/ng-monitoring/utils/printer"
 	"github.com/pingcap/ng-monitoring/utils/testutil"
-
 	"github.com/stretchr/testify/require"
-	clientv3 "go.etcd.io/etcd/client/v3"
-	"go.etcd.io/etcd/tests/v3/integration"
+	"go.etcd.io/etcd/clientv3"
+	"go.etcd.io/etcd/integration"
 )
 
 func TestBasic(t *testing.T) {
@@ -39,8 +38,6 @@ func TestTopology(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		t.Skip("integration.NewClusterV3 will create file contains a colon which is not allowed on Windows")
 	}
-
-	integration.BeforeTestExternal(t)
 	cluster := integration.NewClusterV3(t, &integration.ClusterConfig{Size: 1})
 	defer cluster.Terminate(t)
 	mockPD := testutil.MockPDHTTPServer{}
@@ -73,7 +70,7 @@ func TestTopology(t *testing.T) {
 
 	sub := discover.Subscribe()
 	discoverInterval = time.Millisecond * 100
-	discover.Start()
+	go discover.loadTopologyLoop()
 
 	getComponents := <-sub
 	components := getComponents()

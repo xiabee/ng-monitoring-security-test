@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/pingcap/ng-monitoring/utils/testutil"
-
 	"github.com/stretchr/testify/require"
 )
 

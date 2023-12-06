@@ -25,15 +25,10 @@ import (
 )
 
 func NewGenjiDB(t *testing.T, storagePath string) *genji.DB {
-	badger.DefaultIteratorOptions.PrefetchValues = false
-
 	opts := badger.DefaultOptions(storagePath).
 		WithZSTDCompressionLevel(3).
 		WithBlockSize(8 * 1024).
-		WithValueThreshold(128 * 1024).
-		WithValueLogFileSize(64 * 1024 * 1024).
-		WithBlockCacheSize(16 * 1024 * 1024).
-		WithMemTableSize(16 * 1024 * 1024)
+		WithValueThreshold(128 * 1024)
 
 	engine, err := badgerengine.NewEngine(opts)
 	require.NoError(t, err)
@@ -43,15 +38,10 @@ func NewGenjiDB(t *testing.T, storagePath string) *genji.DB {
 }
 
 func NewBadgerDB(t *testing.T, storagePath string) *badger.DB {
-	badger.DefaultIteratorOptions.PrefetchValues = false
-
 	opts := badger.DefaultOptions(storagePath).
 		WithZSTDCompressionLevel(3).
 		WithBlockSize(8 * 1024).
-		WithValueThreshold(128 * 1024).
-		WithValueLogFileSize(64 * 1024 * 1024).
-		WithBlockCacheSize(16 * 1024 * 1024).
-		WithMemTableSize(16 * 1024 * 1024)
+		WithValueThreshold(128 * 1024)
 
 	engine, err := badgerengine.NewEngine(opts)
 	require.NoError(t, err)
@@ -99,8 +89,7 @@ func (s *MockProfileServer) Start(t *testing.T) {
 	})
 
 	httpServer := &http.Server{
-		Handler:           router,
-		ReadHeaderTimeout: 5 * time.Second,
+		Handler: router,
 	}
 	go func() {
 		if err = httpServer.Serve(listener); err != nil && err != http.ErrServerClosed {
@@ -151,7 +140,13 @@ func (s *MockPDHTTPServer) Setup(t *testing.T) {
 
 	router.HandleFunc("/pd/api/v1/members", func(writer http.ResponseWriter, request *http.Request) {
 		resp := pdclient.GetMembersResponse{
-			Members: []pdclient.GetMembersResponseMember{
+			Members: []struct {
+				GitHash       string   `json:"git_hash"`
+				ClientUrls    []string `json:"client_urls"`
+				DeployPath    string   `json:"deploy_path"`
+				BinaryVersion string   `json:"binary_version"`
+				MemberID      uint64   `json:"member_id"`
+			}{
 				{GitHash: "abcd", ClientUrls: []string{"http://" + s.Addr}, DeployPath: "data", BinaryVersion: "v5.3.0", MemberID: 1},
 			},
 		}
@@ -160,7 +155,9 @@ func (s *MockPDHTTPServer) Setup(t *testing.T) {
 
 	router.HandleFunc("/pd/api/v1/stores", func(writer http.ResponseWriter, request *http.Request) {
 		resp := pdclient.GetStoresResponse{
-			Stores: []pdclient.GetStoresResponseStoresElem{
+			Stores: []struct {
+				Store pdclient.GetStoresResponseStore
+			}{
 				{pdclient.GetStoresResponseStore{Address: "127.0.0.1:20160", ID: 1, Version: "v5.3.0", StatusAddress: "127.0.0.1:20180", StartTimestamp: time.Now().Unix(), StateName: "up"}},
 			},
 		}
@@ -168,8 +165,7 @@ func (s *MockPDHTTPServer) Setup(t *testing.T) {
 	})
 
 	httpServer := &http.Server{
-		Handler:           router,
-		ReadHeaderTimeout: 5 * time.Second,
+		Handler: router,
 	}
 	go func() {
 		if err = httpServer.Serve(listener); err != nil && err != http.ErrServerClosed {

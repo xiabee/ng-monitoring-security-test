@@ -5,15 +5,13 @@ import (
 	"net/http"
 	"os"
 	"path"
-	"time"
-
-	conprofhttp "github.com/pingcap/ng-monitoring/component/conprof/http"
-	"github.com/pingcap/ng-monitoring/component/topsql"
-	"github.com/pingcap/ng-monitoring/config"
 
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
 	"github.com/pingcap/log"
+	conprofhttp "github.com/pingcap/ng-monitoring/component/conprof/http"
+	"github.com/pingcap/ng-monitoring/component/topsql"
+	"github.com/pingcap/ng-monitoring/config"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.uber.org/zap"
 )
@@ -63,10 +61,7 @@ func ServeHTTP(l *config.Log, listener net.Listener) {
 		promHandler.ServeHTTP(c.Writer, c.Request)
 	})
 
-	httpServer = &http.Server{
-		Handler:           ng,
-		ReadHeaderTimeout: 5 * time.Second,
-	}
+	httpServer = &http.Server{Handler: ng}
 	if err = httpServer.Serve(listener); err != nil && err != http.ErrServerClosed {
 		log.Warn("failed to serve http service", zap.Error(err))
 	}

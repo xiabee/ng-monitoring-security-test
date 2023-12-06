@@ -13,8 +13,8 @@ import (
 	"github.com/pingcap/ng-monitoring/utils"
 
 	"github.com/pingcap/log"
-	"go.etcd.io/etcd/api/v3/mvccpb"
-	clientv3 "go.etcd.io/etcd/client/v3"
+	"go.etcd.io/etcd/clientv3"
+	"go.etcd.io/etcd/mvcc/mvccpb"
 	"go.uber.org/zap"
 )
 
@@ -101,7 +101,7 @@ func (l *variableLoader) loadGlobalConfigLoop(ctx context.Context) {
 			return
 		case <-ticker.C:
 			newCfg, err := l.loadAllGlobalConfig(ctx)
-			if err != nil || newCfg == nil {
+			if err != nil {
 				log.Error("load global config failed", zap.Error(err))
 			} else if cfg != nil {
 				if newCfg != cfg {
@@ -152,8 +152,7 @@ func (l *variableLoader) loadAllGlobalConfig(ctx context.Context) (*PDVariable, 
 			return nil, ctx.Err()
 		default:
 		}
-		var etcdCli *clientv3.Client
-		etcdCli, err = l.do.GetEtcdClient()
+		etcdCli, err := l.do.GetEtcdClient()
 		if err != nil {
 			return nil, err
 		}

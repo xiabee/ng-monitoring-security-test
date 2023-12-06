@@ -4,13 +4,12 @@ import (
 	"context"
 	"path"
 
-	"github.com/pingcap/ng-monitoring/config"
-	"github.com/pingcap/ng-monitoring/utils"
-
 	"github.com/dgraph-io/badger/v3"
 	"github.com/genjidb/genji"
 	"github.com/genjidb/genji/engine/badgerengine"
 	"github.com/pingcap/log"
+	"github.com/pingcap/ng-monitoring/config"
+	"github.com/pingcap/ng-monitoring/utils"
 	"go.uber.org/zap"
 )
 
@@ -18,17 +17,12 @@ var documentDB *genji.DB
 var closeCh chan struct{}
 
 func Init(cfg *config.Config) {
-	badger.DefaultIteratorOptions.PrefetchValues = false
-
 	dataPath := path.Join(cfg.Storage.Path, "docdb")
 	l, _ := initLogger(cfg)
 	opts := badger.DefaultOptions(dataPath).
 		WithZSTDCompressionLevel(3).
 		WithBlockSize(8 * 1024).
 		WithValueThreshold(128 * 1024).
-		WithValueLogFileSize(64 * 1024 * 1024).
-		WithBlockCacheSize(16 * 1024 * 1024).
-		WithMemTableSize(16 * 1024 * 1024).
 		WithLogger(l)
 
 	engine, err := badgerengine.NewEngine(opts)
