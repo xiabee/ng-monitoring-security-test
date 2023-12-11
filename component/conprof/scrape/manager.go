@@ -8,12 +8,13 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pingcap/log"
 	"github.com/pingcap/ng-monitoring/component/conprof/meta"
 	"github.com/pingcap/ng-monitoring/component/conprof/store"
 	"github.com/pingcap/ng-monitoring/component/topology"
 	"github.com/pingcap/ng-monitoring/config"
 	"github.com/pingcap/ng-monitoring/utils"
+
+	"github.com/pingcap/log"
 	commonconfig "github.com/prometheus/common/config"
 	"go.uber.org/zap"
 )
@@ -232,7 +233,7 @@ func (m *Manager) stopScrape(component topology.Component) {
 
 func (m *Manager) getProfilingConfig(component topology.Component) *config.ProfilingConfig {
 	switch component.Name {
-	case topology.ComponentTiDB, topology.ComponentPD:
+	case topology.ComponentTiDB, topology.ComponentPD, topology.ComponentTiCDC:
 		return goAppProfilingConfig(m.config.ContinueProfiling)
 	default:
 		return nonGoAppProfilingConfig(m.config.ContinueProfiling)
