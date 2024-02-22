@@ -6,9 +6,7 @@ const (
 	ProfileKindHeap           = "heap"
 	ProfileKindMutex          = "mutex"
 	ProfileDataFormatSVG      = "svg"
-	ProfileDataFormatText     = "text"
 	ProfileDataFormatProtobuf = "protobuf"
-	ProfileDataFormatJeprof   = "jeprof"
 )
 
 type ProfileStatus int64
