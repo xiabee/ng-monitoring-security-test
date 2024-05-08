@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"strings"
 	"testing"
 	"time"
 
@@ -23,7 +22,6 @@ import (
 func TestMain(m *testing.M) {
 	opts := []goleak.Option{
 		goleak.IgnoreTopFunction("github.com/golang/glog.(*loggingT).flushDaemon"),
-		goleak.IgnoreTopFunction("github.com/golang/glog.(*fileSink).flushDaemon"),
 	}
 
 	goleak.VerifyTestMain(m, opts...)
@@ -118,7 +116,7 @@ func TestManager(t *testing.T) {
 			}
 		}
 		require.True(t, found, fmt.Sprintf("%#v", target))
-		require.True(t, strings.Contains(string(data), target.Kind))
+		require.Equal(t, target.Kind, string(data))
 		return nil
 	})
 	require.True(t, count > len(components))
