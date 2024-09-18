@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"strings"
 	"testing"
 	"time"
 
@@ -118,7 +117,7 @@ func TestManager(t *testing.T) {
 			}
 		}
 		require.True(t, found, fmt.Sprintf("%#v", target))
-		require.True(t, strings.Contains(string(data), target.Kind))
+		require.Equal(t, target.Kind, string(data))
 		return nil
 	})
 	require.True(t, count > len(components))
