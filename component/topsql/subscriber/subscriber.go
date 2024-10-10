@@ -3,13 +3,8 @@ package subscriber
 import (
 	"context"
 	"fmt"
-	"net"
-	"net/http"
-	"runtime"
-	"sync"
 	"time"
 
-	"github.com/pingcap/ng-monitoring/component/domain"
 	"github.com/pingcap/ng-monitoring/component/subscriber"
 	"github.com/pingcap/ng-monitoring/component/topology"
 	"github.com/pingcap/ng-monitoring/component/topsql/store"
@@ -28,12 +23,10 @@ func NewSubscriber(
 	topoSubscriber topology.Subscriber,
 	varSubscriber pdvariable.Subscriber,
 	cfgSubscriber config.Subscriber,
-	domain *domain.Domain,
 	store store.Store,
 ) *subscriber.Subscriber {
 	controller := NewSubscriberController(store)
 	return subscriber.NewSubscriber(
-		domain,
 		topoSubscriber,
 		varSubscriber,
 		cfgSubscriber,
@@ -61,35 +54,12 @@ func NewSubscriberController(store store.Store) *SubscriberController {
 
 var _ subscriber.SubscribeController = &SubscriberController{}
 
-func (sc *SubscriberController) NewScraper(ctx context.Context, component topology.Component, schemaInfo *sync.Map) subscriber.Scraper {
-	return NewScraper(ctx, schemaInfo, component, sc.store, sc.config.Security.GetTLSConfig())
-}
-
-func (sc *SubscriberController) NewHTTPClient() *http.Client {
-	dialer := &net.Dialer{
-		Timeout: 10 * time.Second,
-	}
-	tr := &http.Transport{
-		Proxy:                 http.ProxyFromEnvironment,
-		DialContext:           dialer.DialContext,
-		MaxIdleConns:          100,
-		IdleConnTimeout:       90 * time.Second,
-		TLSHandshakeTimeout:   10 * time.Second,
-		ExpectContinueTimeout: 1 * time.Second,
-		MaxIdleConnsPerHost:   runtime.GOMAXPROCS(0) + 1,
-		TLSClientConfig:       sc.config.Security.GetTLSConfig(),
-	}
-	return &http.Client{
-		Transport: tr,
-	}
+func (sc *SubscriberController) NewScraper(ctx context.Context, component topology.Component) subscriber.Scraper {
+	return NewScraper(ctx, component, sc.store, sc.config.Security.GetTLSConfig())
 }
 
 func (sc *SubscriberController) Name() string {
 	return "Top SQL"
-}
-
-func (sc *SubscriberController) GetConfig() *config.Config {
-	return sc.config
 }
 
 func (sc *SubscriberController) IsEnabled() bool {

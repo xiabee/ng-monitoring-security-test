@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/pingcap/ng-monitoring/component/domain"
 	"github.com/pingcap/ng-monitoring/component/topology"
 	"github.com/pingcap/ng-monitoring/config"
 	"github.com/pingcap/ng-monitoring/config/pdvariable"
@@ -22,7 +21,6 @@ type Subscriber struct {
 }
 
 func NewSubscriber(
-	do *domain.Domain,
 	topoSubscriber topology.Subscriber,
 	varSubscriber pdvariable.Subscriber,
 	cfgSubscriber config.Subscriber,
@@ -32,7 +30,7 @@ func NewSubscriber(
 	wg := &sync.WaitGroup{}
 
 	wg.Add(1)
-	sm := NewManager(ctx, wg, do, varSubscriber, topoSubscriber, cfgSubscriber, subscribeController)
+	sm := NewManager(ctx, wg, varSubscriber, topoSubscriber, cfgSubscriber, subscribeController)
 	go utils.GoWithRecovery(func() {
 		defer wg.Done()
 		sm.Run()

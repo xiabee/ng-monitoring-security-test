@@ -2,8 +2,6 @@ package subscriber
 
 import (
 	"context"
-	"net/http"
-	"sync"
 
 	"github.com/pingcap/ng-monitoring/component/topology"
 	"github.com/pingcap/ng-monitoring/config"
@@ -18,11 +16,10 @@ type SubscribeController interface {
 	UpdatePDVariable(pdvariable.PDVariable)
 	UpdateConfig(config.Config)
 	UpdateTopology([]topology.Component)
-	NewHTTPClient() *http.Client
 }
 
 type ScraperFactory interface {
-	NewScraper(ctx context.Context, component topology.Component, schemaInfo *sync.Map) Scraper
+	NewScraper(ctx context.Context, component topology.Component) Scraper
 }
 
 type Scraper interface {

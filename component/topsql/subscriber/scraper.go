@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/pingcap/ng-monitoring/component/subscriber"
@@ -32,21 +31,18 @@ type Scraper struct {
 	tlsConfig *tls.Config
 	component topology.Component
 	store     store.Store
-	// schemaInfo is used to store the schema information. tableID -> schema
-	schemaInfo *sync.Map
 }
 
-func NewScraper(ctx context.Context, schemaInfo *sync.Map, component topology.Component, store store.Store, tlsConfig *tls.Config) *Scraper {
+func NewScraper(ctx context.Context, component topology.Component, store store.Store, tlsConfig *tls.Config) *Scraper {
 	switch component.Name {
 	case topology.ComponentTiDB, topology.ComponentTiKV:
 		ctx, cancel := context.WithCancel(ctx)
 		return &Scraper{
-			ctx:        ctx,
-			cancel:     cancel,
-			tlsConfig:  tlsConfig,
-			component:  component,
-			store:      store,
-			schemaInfo: schemaInfo,
+			ctx:       ctx,
+			cancel:    cancel,
+			tlsConfig: tlsConfig,
+			component: component,
+			store:     store,
 		}
 	default:
 		return nil
@@ -132,7 +128,7 @@ func (s *Scraper) scrapeTiKV() {
 			return
 		}
 
-		err := s.store.ResourceMeteringRecord(addr, topology.ComponentTiKV, record, s.schemaInfo)
+		err := s.store.ResourceMeteringRecord(addr, topology.ComponentTiKV, record)
 		if err != nil {
 			log.Warn("failed to store resource metering records", zap.Error(err))
 		}
