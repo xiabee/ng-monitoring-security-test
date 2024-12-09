@@ -116,9 +116,10 @@ func (m *MemStore) TopSQLRecord(instance, _ string, record *tipb.TopSQLRecord) e
 	return nil
 }
 
-func (m *MemStore) ResourceMeteringRecord(instance, _ string, record *rsmetering.ResourceUsageRecord, _ *sync.Map) error {
+func (m *MemStore) ResourceMeteringRecord(instance, _ string, record *rsmetering.ResourceUsageRecord) error {
 	m.Lock()
 	defer m.Unlock()
+
 	if _, ok := m.ResourceMeteringRecords[instance]; !ok {
 		m.ResourceMeteringRecords[instance] = make(map[string]*rsmetering.ResourceUsageRecord)
 	}

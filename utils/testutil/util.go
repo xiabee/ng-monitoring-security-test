@@ -94,22 +94,7 @@ func (s *MockProfileServer) Start(t *testing.T) {
 
 	router.HandleFunc("/debug/pprof/heap", func(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(http.StatusOK)
-		// jemalloc heap profile format
-		_, err := writer.Write([]byte("heap_v2/524288"))
-		require.NoError(t, err)
-	})
-
-	router.HandleFunc("/debug/pprof/symbol", func(writer http.ResponseWriter, request *http.Request) {
-		writer.WriteHeader(http.StatusOK)
-		if request.Method == http.MethodGet {
-			_, err := writer.Write([]byte("num_symbols: 1\n"))
-			require.NoError(t, err)
-		}
-	})
-
-	router.HandleFunc("/debug/pprof/cmdline", func(writer http.ResponseWriter, request *http.Request) {
-		writer.WriteHeader(http.StatusOK)
-		_, err := writer.Write([]byte("cmdline"))
+		_, err := writer.Write([]byte("heap"))
 		require.NoError(t, err)
 	})
 

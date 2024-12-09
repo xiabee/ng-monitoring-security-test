@@ -7,9 +7,6 @@ import (
 	"path"
 	"time"
 
-	"github.com/VictoriaMetrics/VictoriaMetrics/app/vminsert"
-	"github.com/VictoriaMetrics/VictoriaMetrics/app/vmselect"
-	"github.com/VictoriaMetrics/VictoriaMetrics/app/vmstorage"
 	conprofhttp "github.com/pingcap/ng-monitoring/component/conprof/http"
 	"github.com/pingcap/ng-monitoring/component/topsql"
 	"github.com/pingcap/ng-monitoring/config"
@@ -65,10 +62,7 @@ func ServeHTTP(l *config.Log, listener net.Listener) {
 	promGroup.Any("", func(c *gin.Context) {
 		promHandler.ServeHTTP(c.Writer, c.Request)
 	})
-	// compatible with victoria-metrics handlers
-	ng.NoRoute(func(c *gin.Context) {
-		handlerNoRouter(c)
-	})
+
 	httpServer = &http.Server{
 		Handler:           ng,
 		ReadHeaderTimeout: 5 * time.Second,
@@ -76,25 +70,6 @@ func ServeHTTP(l *config.Log, listener net.Listener) {
 	if err = httpServer.Serve(listener); err != nil && err != http.ErrServerClosed {
 		log.Warn("failed to serve http service", zap.Error(err))
 	}
-}
-
-// Try Victoria-Metrics' handlers first. If not handled, then return a 404 error.
-func handlerNoRouter(c *gin.Context) {
-	//reset to default
-	c.Writer.WriteHeader(http.StatusOK)
-	if vminsert.RequestHandler(c.Writer, c.Request) {
-		return
-	}
-
-	if vmselect.RequestHandler(c.Writer, c.Request) {
-		return
-	}
-
-	if vmstorage.RequestHandler(c.Writer, c.Request) {
-		return
-	}
-
-	c.String(http.StatusNotFound, "404 page not found")
 }
 
 type Status struct {
